@@ -1,11 +1,15 @@
 package com.flowtask.app.presentation
 
 import com.flowtask.app.domain.model.Project
+import com.flowtask.app.domain.model.FocusSession
+import com.flowtask.app.domain.model.Routine
 import com.flowtask.app.domain.model.Task
 import com.flowtask.app.domain.model.TaskFilter
 import com.flowtask.app.domain.model.TaskStatus
 import com.flowtask.app.domain.model.UserPreferences
 import com.flowtask.app.domain.repository.ProjectRepository
+import com.flowtask.app.domain.repository.FocusSessionRepository
+import com.flowtask.app.domain.repository.RoutineRepository
 import com.flowtask.app.domain.repository.TaskRepository
 import com.flowtask.app.domain.repository.UserPreferencesRepository
 import com.flowtask.app.domain.reminder.TaskReminderScheduler
@@ -42,17 +46,42 @@ class TaskManagerViewModelTest {
         val preferences = FakePreferencesRepository()
 
         val reminders = FakeTaskReminderScheduler()
-        TaskManagerViewModel(tasks, projects, preferences, reminders)
+        val focus = FakeFocusRepository()
+        val routines = FakeRoutineRepository()
+        TaskManagerViewModel(tasks, projects, preferences, reminders, focus, routines)
 
-        assertEquals(6, tasks.savedCount)
-        assertEquals(3, projects.savedCount)
+        assertEquals(7, tasks.savedCount)
+        assertEquals(4, projects.savedCount)
+        assertEquals(1, routines.savedCount)
         assertTrue(preferences.current.sampleDataSeeded)
 
-        TaskManagerViewModel(tasks, projects, preferences, reminders)
+        TaskManagerViewModel(tasks, projects, preferences, reminders, focus, routines)
 
-        assertEquals(6, tasks.savedCount)
-        assertEquals(3, projects.savedCount)
+        assertEquals(7, tasks.savedCount)
+        assertEquals(4, projects.savedCount)
     }
+}
+
+private class FakeFocusRepository : FocusSessionRepository {
+    private val state = MutableStateFlow<List<FocusSession>>(emptyList())
+    override fun observeSessions(): Flow<List<FocusSession>> = state
+    override fun observeActiveSession(): Flow<FocusSession?> = MutableStateFlow(null)
+    override suspend fun saveSession(session: FocusSession): Long = 1
+    override suspend fun deleteSession(id: Long) = Unit
+}
+
+private class FakeRoutineRepository : RoutineRepository {
+    private val state = MutableStateFlow<List<Routine>>(emptyList())
+    var savedCount = 0
+        private set
+    override fun observeRoutines(): Flow<List<Routine>> = state
+    override suspend fun saveRoutine(routine: Routine): Long {
+        savedCount++
+        val saved = routine.copy(id = routine.id.takeIf { it != 0L } ?: savedCount.toLong())
+        state.value = state.value.filterNot { it.id == saved.id } + saved
+        return saved.id
+    }
+    override suspend fun deleteRoutine(id: Long) { state.value = state.value.filterNot { it.id == id } }
 }
 
 private class FakeTaskReminderScheduler : TaskReminderScheduler {

@@ -41,6 +41,11 @@ private object PreferenceKeys {
     val notificationsEnabled = booleanPreferencesKey("notifications_enabled")
     val themeMode = stringPreferencesKey("theme_mode")
     val dynamicColorEnabled = booleanPreferencesKey("dynamic_color_enabled")
+    val weekStartsOnMonday = booleanPreferencesKey("week_starts_on_monday")
+    val defaultTaskDurationMinutes = intPreferencesKey("default_task_duration_minutes")
+    val defaultReminderMinutes = intPreferencesKey("default_reminder_minutes")
+    val hapticsEnabled = booleanPreferencesKey("haptics_enabled")
+    val use24HourTime = booleanPreferencesKey("use_24_hour_time")
     val sampleDataSeeded = booleanPreferencesKey("sample_data_seeded")
 }
 
@@ -53,6 +58,11 @@ private fun Preferences.toDomain() = UserPreferences(
     notificationsEnabled = this[PreferenceKeys.notificationsEnabled] ?: false,
     themeMode = this[PreferenceKeys.themeMode]?.let(ThemeMode::valueOf) ?: ThemeMode.SYSTEM,
     dynamicColorEnabled = this[PreferenceKeys.dynamicColorEnabled] ?: false,
+    weekStartsOnMonday = this[PreferenceKeys.weekStartsOnMonday] ?: true,
+    defaultTaskDurationMinutes = this[PreferenceKeys.defaultTaskDurationMinutes] ?: 45,
+    defaultReminderMinutes = this[PreferenceKeys.defaultReminderMinutes] ?: 10,
+    hapticsEnabled = this[PreferenceKeys.hapticsEnabled] ?: true,
+    use24HourTime = this[PreferenceKeys.use24HourTime] ?: true,
     sampleDataSeeded = this[PreferenceKeys.sampleDataSeeded] ?: false,
 )
 
@@ -65,5 +75,10 @@ private fun androidx.datastore.preferences.core.MutablePreferences.write(value: 
     this[PreferenceKeys.notificationsEnabled] = value.notificationsEnabled
     this[PreferenceKeys.themeMode] = value.themeMode.name
     this[PreferenceKeys.dynamicColorEnabled] = value.dynamicColorEnabled
+    this[PreferenceKeys.weekStartsOnMonday] = value.weekStartsOnMonday
+    this[PreferenceKeys.defaultTaskDurationMinutes] = value.defaultTaskDurationMinutes
+    this[PreferenceKeys.defaultReminderMinutes] = value.defaultReminderMinutes
+    this[PreferenceKeys.hapticsEnabled] = value.hapticsEnabled
+    this[PreferenceKeys.use24HourTime] = value.use24HourTime
     this[PreferenceKeys.sampleDataSeeded] = value.sampleDataSeeded
 }

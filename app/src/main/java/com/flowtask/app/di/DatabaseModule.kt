@@ -7,6 +7,7 @@ import com.flowtask.app.data.local.dao.FocusSessionDao
 import com.flowtask.app.data.local.dao.TagDao
 import com.flowtask.app.data.local.dao.TaskDao
 import com.flowtask.app.data.local.dao.ProjectDao
+import com.flowtask.app.data.local.dao.RoutineDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,11 +22,12 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): FlowTaskDatabase =
         Room.databaseBuilder(context, FlowTaskDatabase::class.java, FlowTaskDatabase.DATABASE_NAME)
-            .addMigrations(FlowTaskDatabase.MIGRATION_1_2)
+            .addMigrations(FlowTaskDatabase.MIGRATION_1_2, FlowTaskDatabase.MIGRATION_2_3)
             .build()
 
     @Provides fun provideTaskDao(database: FlowTaskDatabase): TaskDao = database.taskDao()
     @Provides fun provideTagDao(database: FlowTaskDatabase): TagDao = database.tagDao()
     @Provides fun provideFocusSessionDao(database: FlowTaskDatabase): FocusSessionDao = database.focusSessionDao()
     @Provides fun provideProjectDao(database: FlowTaskDatabase): ProjectDao = database.projectDao()
+    @Provides fun provideRoutineDao(database: FlowTaskDatabase): RoutineDao = database.routineDao()
 }

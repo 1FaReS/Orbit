@@ -2,6 +2,7 @@ package com.flowtask.app.presentation.taskmanager
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,8 +45,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.flowtask.app.core.designsystem.components.OrbitGradientButton
 import com.flowtask.app.domain.model.Priority
 import com.flowtask.app.domain.model.Project
+import com.flowtask.app.domain.model.RecurrenceFrequency
+import com.flowtask.app.domain.model.RecurrenceRule
+import com.flowtask.app.domain.model.ReminderSettings
+import com.flowtask.app.domain.model.Subtask
 import com.flowtask.app.domain.model.Task
 import com.flowtask.app.domain.model.TaskStatus
 import java.time.LocalDate
@@ -166,6 +173,10 @@ fun TaskEditorScreen(
     var duration by rememberSaveable { mutableStateOf((initial?.estimatedDurationMinutes ?: 30).toString()) }
     var status by rememberSaveable { mutableStateOf(initial?.status ?: TaskStatus.TODO) }
     var priority by rememberSaveable { mutableStateOf(initial?.priority ?: Priority.MEDIUM) }
+    var advancedVisible by rememberSaveable { mutableStateOf(initial != null && (initial.description.isNotBlank() || initial.subtasks.isNotEmpty())) }
+    var subtasksText by rememberSaveable { mutableStateOf(initial?.subtasks?.joinToString("\n") { it.title }.orEmpty()) }
+    var reminderEnabled by rememberSaveable { mutableStateOf(initial?.reminder?.enabled ?: false) }
+    var repeatWeekly by rememberSaveable { mutableStateOf(initial?.recurrenceRule?.frequency == RecurrenceFrequency.WEEKLY) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
@@ -182,15 +193,6 @@ fun TaskEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Task Name") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                )
-            }
-            item {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    modifier = Modifier.fillMaxWidth().height(110.dp),
-                    label = { Text("Description") },
                     shape = RoundedCornerShape(14.dp),
                 )
             }
@@ -235,27 +237,64 @@ fun TaskEditorScreen(
                     shape = RoundedCornerShape(14.dp),
                 )
             }
-            item { FormLabel("Status") }
-            item {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED).forEach { value ->
-                        FilterChip(
-                            selected = status == value,
-                            onClick = { status = value },
-                            label = { Text(value.displayName()) },
-                        )
+            if (initial != null) {
+                item { FormLabel("Status") }
+                item {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED).forEach { value ->
+                            FilterChip(
+                                selected = status == value,
+                                onClick = { status = value },
+                                label = { Text(value.displayName()) },
+                            )
+                        }
                     }
                 }
             }
             item { FormLabel("Priority") }
             item {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Priority.entries.forEach { value ->
+                    listOf(Priority.LOW, Priority.MEDIUM, Priority.HIGH).forEach { value ->
                         FilterChip(
                             selected = priority == value,
                             onClick = { priority = value },
                             label = { Text(value.displayName()) },
                         )
+                    }
+                }
+            }
+            item {
+                OutlinedButton(onClick = { advancedVisible = !advancedVisible }, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                    Text(if (advancedVisible) "Hide details" else "Notes, subtasks & repeat")
+                    Spacer(Modifier.weight(1f))
+                    Icon(Icons.Outlined.ExpandMore, null)
+                }
+            }
+            item {
+                AnimatedVisibility(advancedVisible) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            modifier = Modifier.fillMaxWidth().height(110.dp),
+                            label = { Text("Notes") },
+                            shape = MaterialTheme.shapes.medium,
+                        )
+                        OutlinedTextField(
+                            value = subtasksText,
+                            onValueChange = { subtasksText = it },
+                            modifier = Modifier.fillMaxWidth().height(110.dp),
+                            label = { Text("Subtasks, one per line") },
+                            shape = MaterialTheme.shapes.medium,
+                        )
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) { Text("Reminder"); Text("10 minutes before", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            Switch(reminderEnabled, onCheckedChange = { reminderEnabled = it })
+                        }
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) { Text("Repeat weekly"); Text("On this weekday", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            Switch(repeatWeekly, onCheckedChange = { repeatWeekly = it })
+                        }
                     }
                 }
             }
@@ -271,6 +310,11 @@ fun TaskEditorScreen(
                                 title = title.trim(), description = description.trim(), category = projectName,
                                 dueDate = date, dueTime = time, estimatedDurationMinutes = duration.toInt(),
                                 status = status, priority = priority,
+                                subtasks = subtasksText.lines().filter(String::isNotBlank).mapIndexed { index, value ->
+                                    Subtask(parentTaskId = initial?.id ?: 0, title = value.trim(), position = index)
+                                },
+                                reminder = if (reminderEnabled) ReminderSettings(minutesBefore = 10) else null,
+                                recurrenceRule = if (repeatWeekly) RecurrenceRule(RecurrenceFrequency.WEEKLY, daysOfWeek = setOf(date.dayOfWeek.value)) else null,
                             ),
                         )
                     }
@@ -298,11 +342,14 @@ private fun EditorScaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") }
-                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Column(Modifier.weight(1f)) {
+                    Text("ORBIT", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                }
                 Spacer(Modifier.size(48.dp))
             }
         },
@@ -324,12 +371,10 @@ private fun FormLabel(text: String) = Text(text, style = MaterialTheme.typograph
 
 @Composable
 private fun PrimaryAction(text: String, onClick: () -> Unit) {
-    Button(
+    OrbitGradientButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(56.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
-    ) { Text(text, fontWeight = FontWeight.Bold) }
+    ) { Text(text, fontWeight = FontWeight.SemiBold) }
 }
 
 private fun showDatePicker(context: android.content.Context, initial: LocalDate, onDate: (LocalDate) -> Unit) {

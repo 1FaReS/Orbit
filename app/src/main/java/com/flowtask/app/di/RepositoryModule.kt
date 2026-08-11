@@ -4,6 +4,7 @@ import com.flowtask.app.data.repository.DataStoreUserPreferencesRepository
 import com.flowtask.app.data.repository.OfflineFocusSessionRepository
 import com.flowtask.app.data.repository.OfflineTagRepository
 import com.flowtask.app.data.repository.OfflineProjectRepository
+import com.flowtask.app.data.repository.OfflineRoutineRepository
 import com.flowtask.app.data.repository.OfflineTaskRepository
 import com.flowtask.app.data.reminder.WorkManagerTaskReminderScheduler
 import com.flowtask.app.domain.repository.FocusSessionRepository
@@ -11,6 +12,7 @@ import com.flowtask.app.domain.repository.TagRepository
 import com.flowtask.app.domain.repository.TaskRepository
 import com.flowtask.app.domain.repository.UserPreferencesRepository
 import com.flowtask.app.domain.repository.ProjectRepository
+import com.flowtask.app.domain.repository.RoutineRepository
 import com.flowtask.app.domain.reminder.TaskReminderScheduler
 import dagger.Binds
 import dagger.Module
@@ -29,6 +31,7 @@ abstract class RepositoryModule {
         implementation: DataStoreUserPreferencesRepository,
     ): UserPreferencesRepository
     @Binds abstract fun bindProjectRepository(implementation: OfflineProjectRepository): ProjectRepository
+    @Binds abstract fun bindRoutineRepository(implementation: OfflineRoutineRepository): RoutineRepository
     @Binds abstract fun bindTaskReminderScheduler(
         implementation: WorkManagerTaskReminderScheduler,
     ): TaskReminderScheduler

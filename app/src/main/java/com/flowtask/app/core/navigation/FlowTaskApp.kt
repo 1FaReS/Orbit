@@ -1,24 +1,34 @@
 package com.flowtask.app.core.navigation
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -27,43 +37,56 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.flowtask.app.core.designsystem.theme.OrbitTheme
+import com.flowtask.app.domain.model.ThemeMode
+import com.flowtask.app.feature.analytics.AnalyticsScreen
+import com.flowtask.app.feature.calendar.CalendarScreen
+import com.flowtask.app.feature.focus.FocusScreen
+import com.flowtask.app.feature.replay.DayReplayScreen
+import com.flowtask.app.feature.routines.RoutinesScreen
+import com.flowtask.app.feature.settings.SettingsScreen
+import com.flowtask.app.feature.tasks.QuickAddSheet
+import com.flowtask.app.feature.today.TodayScreen
 import com.flowtask.app.presentation.TaskManagerMessage
 import com.flowtask.app.presentation.TaskManagerViewModel
-import com.flowtask.app.presentation.taskmanager.AppPrimary
-import com.flowtask.app.presentation.taskmanager.HomeScreen
-import com.flowtask.app.presentation.taskmanager.ProfileScreen
-import com.flowtask.app.presentation.taskmanager.ProjectDetailScreen
-import com.flowtask.app.presentation.taskmanager.ProjectEditorScreen
-import com.flowtask.app.presentation.taskmanager.ProjectsScreen
 import com.flowtask.app.presentation.taskmanager.TaskEditorScreen
-import com.flowtask.app.presentation.taskmanager.TodayTasksScreen
-import com.flowtask.app.presentation.taskmanager.WelcomeScreen
+import java.time.LocalDate
 
 private object Routes {
-    const val Home = "home"
     const val Today = "today"
-    const val Projects = "projects"
-    const val Profile = "profile"
-    const val NewProject = "project/new"
-    const val ProjectDetail = "project/{projectId}"
-    const val NewTask = "task/new/{projectId}"
+    const val Calendar = "calendar"
+    const val Analytics = "analytics"
+    const val Settings = "settings"
+    const val Focus = "focus"
+    const val Replay = "replay"
+    const val Routines = "routines"
+    const val NewTask = "task/new"
     const val EditTask = "task/edit/{taskId}"
 }
 
 @Composable
-fun FlowTaskApp(viewModel: TaskManagerViewModel = hiltViewModel()) {
+fun OrbitApp(viewModel: TaskManagerViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    if (state.loading) return
-    if (!state.preferences.onboardingCompleted) {
-        WelcomeScreen(onStart = viewModel::finishOnboarding)
-        return
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (state.preferences.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> systemDark
     }
+    OrbitTheme(darkTheme = darkTheme) {
+        OrbitNavigation(viewModel)
+    }
+}
 
+@Composable
+private fun OrbitNavigation(viewModel: TaskManagerViewModel) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val backStack by navController.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
-    val bottomRoutes = setOf(Routes.Home, Routes.Today, Routes.Projects, Routes.Profile)
+    val bottomRoutes = setOf(Routes.Today, Routes.Calendar, Routes.Analytics, Routes.Settings)
+    var quickAddOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { message ->
@@ -81,103 +104,94 @@ fun FlowTaskApp(viewModel: TaskManagerViewModel = hiltViewModel()) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (route in bottomRoutes) {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    AppNavItem(route == Routes.Home, { navController.navigateTop(Routes.Home) }, Icons.Outlined.Home, "Home")
-                    AppNavItem(route == Routes.Today, { navController.navigateTop(Routes.Today) }, Icons.Outlined.CalendarMonth, "Today")
-                    AppNavItem(false, { navController.navigate("task/new/-1") }, Icons.Filled.Add, "Add")
-                    AppNavItem(route == Routes.Projects, { navController.navigateTop(Routes.Projects) }, Icons.Outlined.Folder, "Projects")
-                    AppNavItem(route == Routes.Profile, { navController.navigateTop(Routes.Profile) }, Icons.Outlined.Person, "Profile")
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
+                    shadowElevation = 8.dp,
+                ) {
+                    NavigationBar(containerColor = androidx.compose.ui.graphics.Color.Transparent, tonalElevation = 0.dp) {
+                        OrbitNavItem(route == Routes.Today, { navController.navigateTop(Routes.Today) }, Icons.Outlined.Today, "Today")
+                        OrbitNavItem(route == Routes.Calendar, { navController.navigateTop(Routes.Calendar) }, Icons.Outlined.CalendarMonth, "Calendar")
+                        OrbitNavItem(false, { quickAddOpen = true }, Icons.Filled.Add, "Add")
+                        OrbitNavItem(route == Routes.Analytics, { navController.navigateTop(Routes.Analytics) }, Icons.Outlined.BarChart, "Analytics")
+                        OrbitNavItem(route == Routes.Settings, { navController.navigateTop(Routes.Settings) }, Icons.Outlined.Settings, "Settings")
+                    }
                 }
             }
         },
     ) { outerPadding ->
-        NavHost(navController, startDestination = Routes.Home, modifier = Modifier.padding(outerPadding)) {
-            composable(Routes.Home) {
-                HomeScreen(
-                    tasks = state.tasks,
-                    projectSummaries = state.projectSummaries,
-                    progress = state.todayProgress,
-                    onViewToday = { navController.navigateTop(Routes.Today) },
-                    onNotifications = { navController.navigateTop(Routes.Profile) },
-                    onAddProject = { navController.navigate(Routes.NewProject) },
-                    onProjectClick = { navController.navigate("project/${it.id}") },
-                    onTaskClick = { navController.navigate("task/edit/${it.id}") },
-                )
-            }
+        NavHost(navController, startDestination = Routes.Today, modifier = Modifier.padding(outerPadding)) {
             composable(Routes.Today) {
-                TodayTasksScreen(
+                val activeTask = state.activeFocus?.taskId?.let { id -> state.tasks.firstOrNull { it.id == id } }
+                TodayScreen(
+                    tasks = state.todayTasks,
+                    use24HourTime = state.preferences.use24HourTime,
+                    hapticsEnabled = state.preferences.hapticsEnabled,
+                    activeFocusTask = activeTask,
+                    onToggle = viewModel::toggleTask,
+                    onReschedule = { task, time -> viewModel.rescheduleTask(task, LocalDate.now(), time) },
+                    onEdit = { navController.navigate("task/edit/${it.id}") },
+                    onStartFocus = { task -> viewModel.startFocus(task) { navController.navigate(Routes.Focus) } },
+                    onOpenFocus = { navController.navigate(Routes.Focus) },
+                )
+            }
+            composable(Routes.Calendar) {
+                CalendarScreen(
                     selectedDate = state.selectedDate,
-                    filter = state.filter,
-                    tasks = state.visibleTasks,
-                    projects = state.projects,
-                    onBack = { navController.navigateTop(Routes.Home) },
-                    onNotifications = { navController.navigateTop(Routes.Profile) },
+                    tasks = state.tasks,
+                    weekStartsOnMonday = state.preferences.weekStartsOnMonday,
+                    use24HourTime = state.preferences.use24HourTime,
+                    hapticsEnabled = state.preferences.hapticsEnabled,
                     onDateSelected = viewModel::selectDate,
-                    onFilterSelected = viewModel::setFilter,
-                    onToggle = viewModel::toggleTask,
                     onTaskClick = { navController.navigate("task/edit/${it.id}") },
-                    onAddTask = { navController.navigate("task/new/-1") },
-                )
-            }
-            composable(Routes.Projects) {
-                ProjectsScreen(
-                    state.projectSummaries,
-                    onBack = { navController.navigateTop(Routes.Home) },
-                    onAdd = { navController.navigate(Routes.NewProject) },
-                    onProjectClick = { navController.navigate("project/${it.id}") },
-                )
-            }
-            composable(Routes.Profile) {
-                ProfileScreen(
-                    state.preferences.notificationsEnabled,
-                    viewModel::updateNotifications,
-                    viewModel::resetOnboarding,
-                )
-            }
-            composable(Routes.NewProject) {
-                ProjectEditorScreen(null, { navController.popBackStack() }) { project ->
-                    viewModel.saveProject(project, "Project added") {
-                        navController.popBackStack()
-                    }
-                }
-            }
-            composable(
-                Routes.ProjectDetail,
-                arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
-            ) { entry ->
-                val id = entry.arguments?.getLong("projectId") ?: return@composable
-                val project = state.projects.firstOrNull { it.id == id } ?: return@composable
-                ProjectDetailScreen(
-                    project,
-                    state.tasks,
-                    { navController.popBackStack() },
-                    onAddTask = { navController.navigate("task/new/$id") },
                     onToggle = viewModel::toggleTask,
-                    onTaskClick = { navController.navigate("task/edit/${it.id}") },
+                    onReschedule = viewModel::rescheduleTask,
                 )
             }
-            composable(
-                Routes.NewTask,
-                arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
-            ) { entry ->
-                val projectId = entry.arguments?.getLong("projectId") ?: -1
+            composable(Routes.Analytics) {
+                AnalyticsScreen(state.tasks, state.focusSessions, onOpenReplay = { navController.navigate(Routes.Replay) })
+            }
+            composable(Routes.Settings) {
+                SettingsScreen(
+                    preferences = state.preferences,
+                    onThemeChanged = viewModel::updateTheme,
+                    onNotificationsChanged = viewModel::updateNotifications,
+                    onHapticsChanged = viewModel::updateHaptics,
+                    on24HourChanged = viewModel::update24HourTime,
+                    onWeekStartChanged = viewModel::updateWeekStart,
+                    onDefaultDurationChanged = viewModel::updateDefaultDuration,
+                    onOpenRoutines = { navController.navigate(Routes.Routines) },
+                    onOpenReplay = { navController.navigate(Routes.Replay) },
+                    exportText = state.toExportJson(),
+                )
+            }
+            composable(Routes.Focus) {
+                val session = state.activeFocus
+                val task = session?.taskId?.let { id -> state.tasks.firstOrNull { it.id == id } }
+                FocusScreen(
+                    session = session,
+                    task = task,
+                    onPauseChanged = { paused -> session?.let { viewModel.setFocusPaused(it, paused) } },
+                    onFinish = { session?.let { viewModel.finishFocus(it, completeTask = true) { navController.popBackStack() } } },
+                    onCancel = { session?.let { viewModel.cancelFocus(it) { navController.popBackStack() } } },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.Replay) { DayReplayScreen(state.tasks, state.focusSessions, onBack = { navController.popBackStack() }) }
+            composable(Routes.Routines) {
+                RoutinesScreen(state.routines, onBack = { navController.popBackStack() }, onSave = viewModel::saveRoutine, onDelete = viewModel::deleteRoutine)
+            }
+            composable(Routes.NewTask) {
                 TaskEditorScreen(
                     initial = null,
                     projects = state.projects,
-                    preselectedProject = state.projects.firstOrNull { it.id == projectId }?.name,
+                    preselectedProject = state.projects.firstOrNull()?.name,
                     onBack = { navController.popBackStack() },
-                    onSave = { task ->
-                        viewModel.saveTask(task, "Task added") {
-                            navController.popBackStack()
-                        }
-                    },
+                    onSave = { task -> viewModel.saveTask(task, "Added to timeline") { navController.popBackStack() } },
                     onDelete = null,
                 )
             }
-            composable(
-                Routes.EditTask,
-                arguments = listOf(navArgument("taskId") { type = NavType.LongType }),
-            ) { entry ->
+            composable(Routes.EditTask, arguments = listOf(navArgument("taskId") { type = NavType.LongType })) { entry ->
                 val id = entry.arguments?.getLong("taskId") ?: return@composable
                 val task = state.tasks.firstOrNull { it.id == id } ?: return@composable
                 TaskEditorScreen(
@@ -185,24 +199,46 @@ fun FlowTaskApp(viewModel: TaskManagerViewModel = hiltViewModel()) {
                     projects = state.projects,
                     preselectedProject = null,
                     onBack = { navController.popBackStack() },
-                    onSave = { updated ->
-                        viewModel.saveTask(updated, "Task updated") {
-                            navController.popBackStack()
-                        }
-                    },
-                    onDelete = { deleting ->
-                        viewModel.deleteTask(deleting) {
-                            navController.popBackStack()
-                        }
-                    },
+                    onSave = { updated -> viewModel.saveTask(updated, "Task updated") { navController.popBackStack() } },
+                    onDelete = { deleting -> viewModel.deleteTask(deleting) { navController.popBackStack() } },
                 )
             }
         }
     }
+
+    if (quickAddOpen) {
+        QuickAddSheet(
+            projects = state.projects,
+            defaultDurationMinutes = state.preferences.defaultTaskDurationMinutes,
+            defaultReminderMinutes = state.preferences.defaultReminderMinutes,
+            onDismiss = { quickAddOpen = false },
+            onSave = { task -> viewModel.saveTask(task, "Added to timeline"); quickAddOpen = false },
+            onOpenFullEditor = { quickAddOpen = false; navController.navigate(Routes.NewTask) },
+        )
+    }
+}
+
+private fun com.flowtask.app.presentation.TaskManagerUiState.toExportJson(): String {
+    fun String.json(): String = replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+    return buildString {
+        append("{\n  \"version\": 1,\n  \"tasks\": [\n")
+        tasks.forEachIndexed { index, task ->
+            append("    {\"id\": ${task.id}, \"title\": \"${task.title.json()}\", \"date\": \"${task.dueDate ?: ""}\", \"time\": \"${task.dueTime ?: ""}\", \"durationMinutes\": ${task.estimatedDurationMinutes}, \"completed\": ${task.status == com.flowtask.app.domain.model.TaskStatus.COMPLETED}}")
+            if (index != tasks.lastIndex) append(',')
+            append('\n')
+        }
+        append("  ],\n  \"routines\": [\n")
+        routines.forEachIndexed { index, routine ->
+            append("    {\"id\": ${routine.id}, \"name\": \"${routine.name.json()}\", \"enabled\": ${routine.enabled}}")
+            if (index != routines.lastIndex) append(',')
+            append('\n')
+        }
+        append("  ]\n}")
+    }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.AppNavItem(
+private fun RowScope.OrbitNavItem(
     selected: Boolean,
     onClick: () -> Unit,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -211,14 +247,22 @@ private fun androidx.compose.foundation.layout.RowScope.AppNavItem(
     NavigationBarItem(
         selected = selected,
         onClick = onClick,
-        icon = { Icon(icon, label, tint = if (selected || label == "Add") AppPrimary else MaterialTheme.colorScheme.onSurfaceVariant) },
+        icon = { Icon(icon, label, tint = if (selected || label == "Add") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+        label = { androidx.compose.material3.Text(label) },
         alwaysShowLabel = false,
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            indicatorColor = MaterialTheme.colorScheme.tertiaryContainer,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
     )
 }
 
 private fun androidx.navigation.NavHostController.navigateTop(route: String) {
     navigate(route) {
-        popUpTo(Routes.Home) { saveState = true }
+        popUpTo(Routes.Today) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }

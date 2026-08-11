@@ -1,59 +1,63 @@
 package com.flowtask.app.core.designsystem.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-    primary = FlowIndigo,
+    primary = OrbitBlue,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEDE6FF),
-    onPrimaryContainer = Color(0xFF171153),
-    secondary = FlowMint,
-    tertiary = FlowCoral,
-    background = FlowBackground,
-    surface = FlowSurface,
-    surfaceVariant = Color(0xFFF0EDFA),
+    primaryContainer = OrbitBerrySoft,
+    onPrimaryContainer = Color(0xFF65123A),
+    secondary = OrbitAqua,
+    secondaryContainer = OrbitAquaSoft,
+    onSecondaryContainer = Color(0xFF0B4A58),
+    tertiary = OrbitLilac,
+    tertiaryContainer = OrbitLilacSoft,
+    onTertiaryContainer = Color(0xFF513170),
+    background = OrbitBackground,
+    onBackground = OrbitText,
+    surface = OrbitSurface,
+    onSurface = OrbitText,
+    surfaceVariant = Color(0xFFFFF5F9),
+    onSurfaceVariant = OrbitTextSecondary,
+    outline = OrbitBorder,
+    outlineVariant = Color(0xFFF6EDF3),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = FlowIndigoDark,
-    onPrimary = Color(0xFF2C2772),
-    primaryContainer = Color(0xFF433E8D),
-    onPrimaryContainer = Color(0xFFE4E1FF),
-    secondary = Color(0xFFB5CCBF),
-    tertiary = Color(0xFFFFB3AE),
-    background = FlowBackgroundDark,
-    surface = FlowSurfaceDark,
-    surfaceVariant = Color(0xFF47464F),
+    primary = OrbitBlueDark,
+    onPrimary = Color(0xFF5E0933),
+    primaryContainer = Color(0xFF7E1648),
+    onPrimaryContainer = Color(0xFFFFD9E7),
+    secondary = Color(0xFF92D7E1),
+    secondaryContainer = Color(0xFF164D57),
+    onSecondaryContainer = Color(0xFFB7EBF2),
+    tertiary = Color(0xFFD3B2FD),
+    tertiaryContainer = Color(0xFF513970),
+    onTertiaryContainer = Color(0xFFF0E4FF),
+    background = OrbitBackgroundDark,
+    onBackground = OrbitTextDark,
+    surface = OrbitSurfaceDark,
+    onSurface = OrbitTextDark,
+    surfaceVariant = OrbitSurfaceSecondaryDark,
+    onSurfaceVariant = OrbitTextSecondaryDark,
+    outline = OrbitBorderDark,
+    outlineVariant = OrbitBorderDark,
 )
 
 @Composable
-fun FlowTaskTheme(
+fun OrbitTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
-    val colors = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
-
     MaterialTheme(
-        colorScheme = colors,
-        typography = FlowTaskTypography,
-        shapes = FlowTaskShapes,
+        colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography = OrbitTypography,
+        shapes = OrbitShapes,
         content = content,
     )
 }

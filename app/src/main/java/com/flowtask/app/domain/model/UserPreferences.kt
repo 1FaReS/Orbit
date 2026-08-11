@@ -11,6 +11,11 @@ data class UserPreferences(
     val notificationsEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColorEnabled: Boolean = false,
+    val weekStartsOnMonday: Boolean = true,
+    val defaultTaskDurationMinutes: Int = 45,
+    val defaultReminderMinutes: Int = 10,
+    val hapticsEnabled: Boolean = true,
+    val use24HourTime: Boolean = true,
     val sampleDataSeeded: Boolean = false,
 )
 

@@ -8,6 +8,7 @@ import com.flowtask.app.domain.model.Priority
 import com.flowtask.app.domain.model.RecurrenceFrequency
 import com.flowtask.app.domain.model.TaskStatus
 import java.time.Instant
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -33,4 +34,7 @@ class FlowTaskTypeConverters {
     @TypeConverter fun intSetToString(value: Set<Int>): String = value.sorted().joinToString(",")
     @TypeConverter fun stringToIntSet(value: String): Set<Int> = value.takeIf(String::isNotBlank)
         ?.split(',')?.map(String::toInt)?.toSet().orEmpty()
+    @TypeConverter fun daySetToString(value: Set<DayOfWeek>): String = value.sorted().joinToString(",") { it.name }
+    @TypeConverter fun stringToDaySet(value: String): Set<DayOfWeek> = value.takeIf(String::isNotBlank)
+        ?.split(',')?.map(DayOfWeek::valueOf)?.toSet().orEmpty()
 }
