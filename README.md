@@ -22,9 +22,11 @@ It is designed as an offline-first personal command center: plan a day visually,
 
 ![Orbit Today — visual timeline](docs/screenshots/orbit-today.png)
 
-| Calendar | Analytics | Settings |
-| --- | --- | --- |
-| ![Orbit Calendar](docs/screenshots/orbit-calendar.png) | ![Orbit Analytics](docs/screenshots/orbit-analytics.png) | ![Orbit Settings](docs/screenshots/orbit-settings.png) |
+| Calendar | Analytics |
+| --- | --- |
+| ![Orbit Calendar](docs/screenshots/orbit-calendar.png) | ![Orbit Analytics](docs/screenshots/orbit-analytics.png) |
+| Settings | Focus |
+| ![Orbit Settings](docs/screenshots/orbit-settings.png) | ![Orbit Focus](docs/screenshots/orbit-focus.png) |
 
 ## Architecture
 
